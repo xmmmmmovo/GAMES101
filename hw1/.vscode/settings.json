@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "eigen": "cpp"
+    },
+    "cmake.debugConfig": {
+        "args": []
+    }
+}
