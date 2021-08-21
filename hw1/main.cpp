@@ -1,5 +1,6 @@
 #include "Triangle.hpp"
 #include "rasterizer.hpp"
+#include <ctime>
 #include <eigen3/Eigen/Eigen>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -47,9 +48,14 @@ Eigen::Matrix4f get_rotation(Vector3f axis, float angle) {
 }
 
 int main(int argc, const char **argv) {
-    float       angle        = 0;
-    bool        command_line = false;
-    std::string filename     = "output.png";
+    float              angle        = 0;
+    bool               command_line = false;
+    auto               t            = std::time(nullptr);
+    auto               tm           = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    auto        time_str = oss.str();
+    std::string filename = "../output/" + time_str + ".png";
 
     if (argc >= 3) {
         command_line = true;
