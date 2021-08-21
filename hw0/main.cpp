@@ -17,7 +17,7 @@ int main() {
     // Example of vector
     // std::cout << "Example of vector \n";
     // vector definition
-    // Eigen::Vector3f v(1.0f, 2.0f, 3.0f);
+//     Eigen::Vector3f v(1.0f, 2.0f, 3.0f);
     // Eigen::Vector3f w(1.0f, 0.0f, 0.0f);
     // vector output
     // std::cout << "Example of output \n";
