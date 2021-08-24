@@ -9,4 +9,4 @@
 //#define TWO_PI (2.0* MY_PI)
 
 
-#endif //RASTERIZER_GLOBAL_H
+#endif//RASTERIZER_GLOBAL_H

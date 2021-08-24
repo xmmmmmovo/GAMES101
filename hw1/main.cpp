@@ -39,7 +39,6 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle) {
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar) {
     // Students will implement this function
-
     Eigen::Matrix4f projection2ortho = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f ortho            = Eigen::Matrix4f::Identity();
     auto            radian           = (eye_fov * M_PI / 180.0) / 2;
@@ -93,7 +92,7 @@ int main(int argc, const char **argv) {
 
     rst::rasterizer r(700, 700);
 
-    Eigen::Vector3f eye_pos   = {0, 0, 5};
+    Eigen::Vector3f eye_pos = {0, 0, 5};
 
     std::vector<Eigen::Vector3f> pos{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
 
@@ -105,6 +104,7 @@ int main(int argc, const char **argv) {
     int key         = 0;
     int frame_count = 0;
 
+    //测试用轴
     Eigen::Vector3f test_axis = {1, 0, 1};
 
     if (command_line) {

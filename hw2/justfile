@@ -1,0 +1,11 @@
+configure-cmake:
+    cd build; cmake ..;
+
+build-src:
+    cd build; make -j8
+
+run-win: build-src
+    cd build; ./Rasterizer
+
+run-pic: build-src
+    cd build; ./Rasterizer -f

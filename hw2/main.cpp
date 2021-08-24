@@ -1,93 +1,111 @@
-// clang-format off
+#include "Triangle.hpp"
+#include "global.hpp"
+#include "rasterizer.hpp"
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include "rasterizer.hpp"
-#include "global.hpp"
-#include "Triangle.hpp"
 
-constexpr double MY_PI = 3.1415926;
-
-Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
-{
+Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
     Eigen::Matrix4f translate;
-    translate << 1,0,0,-eye_pos[0],
-                 0,1,0,-eye_pos[1],
-                 0,0,1,-eye_pos[2],
-                 0,0,0,1;
+    translate << 1, 0, 0, -eye_pos[0],
+            0, 1, 0, -eye_pos[1],
+            0, 0, 1, -eye_pos[2],
+            0, 0, 0, 1;
 
-    view = translate*view;
+    view = translate * view;
 
     return view;
 }
 
-Eigen::Matrix4f get_model_matrix(float rotation_angle)
-{
-    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+Eigen::Matrix4f get_model_matrix(float rotation_angle) {
+    Eigen::Matrix4f model  = Eigen::Matrix4f::Identity();
+    float           radian = rotation_angle * M_PI / 180.0;
+
+    // Create the model matrix for rotating the triangle around the Z axis.
+    // Then return it.
+    auto cosa = cos(radian);
+    auto sina = sin(radian);
+    model << cosa, -sina, 0, 0,
+            sina, cosa, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1;
+
     return model;
 }
 
-Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
-{
-    // TODO: Copy-paste your implementation from the previous assignment.
-    Eigen::Matrix4f projection;
+Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
+                                      float zNear, float zFar) {
+    // Students will implement this function
 
-    return projection;
+    Eigen::Matrix4f projection2ortho = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f ortho            = Eigen::Matrix4f::Identity();
+    auto            radian           = (eye_fov * M_PI / 180.0) / 2;
+
+    // Create the projection matrix for the given parameters.
+    // Then return it.
+    auto top   = abs(zNear) * tan(radian);
+    auto right = top * aspect_ratio;
+
+    ortho << 1 / right, 0, 0, 0,
+            0, 1 / top, 0, 0,
+            0, 0, 2 / (zNear - zFar), -(zNear + zFar) / (zNear - zFar),
+            0, 0, 0, 1;
+    projection2ortho << zNear, 0, 0, 0,
+            0, zNear, 0, 0,
+            0, 0, zNear + zFar, -zNear * zFar,
+            0, 0, 1, 0;
+
+    return ortho * projection2ortho;
 }
 
-int main(int argc, const char** argv)
-{
-    float angle = 0;
-    bool command_line = false;
-    std::string filename = "output.png";
 
-    if (argc == 2)
-    {
+int main(int argc, const char **argv) {
+    float              angle        = 0;
+    bool               command_line = false;
+    auto               t            = std::time(nullptr);
+    auto               tm           = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    auto        time_str = oss.str();
+    std::string filename = "../output/" + time_str + ".png";
+    if (argc == 2) {
         command_line = true;
-        filename = std::string(argv[1]);
     }
 
     rst::rasterizer r(700, 700);
 
-    Eigen::Vector3f eye_pos = {0,0,5};
+    Eigen::Vector3f eye_pos = {0, 0, 5};
 
 
-    std::vector<Eigen::Vector3f> pos
-            {
-                    {2, 0, -2},
-                    {0, 2, -2},
-                    {-2, 0, -2},
-                    {3.5, -1, -5},
-                    {2.5, 1.5, -5},
-                    {-1, 0.5, -5}
-            };
+    std::vector<Eigen::Vector3f> pos{
+            {2, 0, -2},
+            {0, 2, -2},
+            {-2, 0, -2},
+            {3.5, -1, -5},
+            {2.5, 1.5, -5},
+            {-1, 0.5, -5}};
 
-    std::vector<Eigen::Vector3i> ind
-            {
-                    {0, 1, 2},
-                    {3, 4, 5}
-            };
+    std::vector<Eigen::Vector3i> ind{
+            {0, 1, 2},
+            {3, 4, 5}};
 
-    std::vector<Eigen::Vector3f> cols
-            {
-                    {217.0, 238.0, 185.0},
-                    {217.0, 238.0, 185.0},
-                    {217.0, 238.0, 185.0},
-                    {185.0, 217.0, 238.0},
-                    {185.0, 217.0, 238.0},
-                    {185.0, 217.0, 238.0}
-            };
+    std::vector<Eigen::Vector3f> cols{
+            {217.0, 238.0, 185.0},
+            {217.0, 238.0, 185.0},
+            {217.0, 238.0, 185.0},
+            {185.0, 217.0, 238.0},
+            {185.0, 217.0, 238.0},
+            {185.0, 217.0, 238.0}};
 
     auto pos_id = r.load_positions(pos);
     auto ind_id = r.load_indices(ind);
     auto col_id = r.load_colors(cols);
 
-    int key = 0;
+    int key         = 0;
     int frame_count = 0;
 
-    if (command_line)
-    {
+    if (command_line) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
         r.set_model(get_model_matrix(angle));
@@ -104,14 +122,14 @@ int main(int argc, const char** argv)
         return 0;
     }
 
-    while(key != 27)
-    {
+    while (key != 27) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
         r.set_model(get_model_matrix(angle));
         r.set_view(get_view_matrix(eye_pos));
         r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
+        // 采样行列
         r.draw(pos_id, ind_id, col_id, rst::Primitive::Triangle);
 
         cv::Mat image(700, 700, CV_32FC3, r.frame_buffer().data());
