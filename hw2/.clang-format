@@ -31,7 +31,6 @@ BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: BeforeColon
-ColumnLimit: 0
 CompactNamespaces: false
 ContinuationIndentWidth: 8
 IndentCaseLabels: true
@@ -64,3 +63,5 @@ NamespaceIndentation:    Inner
 AlignConsecutiveAssignments:    true
 AlignConsecutiveDeclarations:    true
 AlignTrailingComments:    true
+# 每行字符的限制，0表示没有限制
+ColumnLimit:	80

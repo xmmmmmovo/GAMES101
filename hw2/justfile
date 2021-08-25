@@ -9,3 +9,9 @@ run-win: build-src
 
 run-pic: build-src
     cd build; ./Rasterizer -f
+
+run-msaa-win: build-src
+    cd build; ./Rasterizer -msaa
+
+run-msaa-pic: build-src
+    cd build; ./Rasterizer -f -msaa

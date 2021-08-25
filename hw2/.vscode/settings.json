@@ -86,6 +86,7 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "cinttypes": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "core": "cpp"
     }
 }
