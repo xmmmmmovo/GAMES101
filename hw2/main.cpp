@@ -8,10 +8,8 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
     Eigen::Matrix4f translate;
-    translate << 1, 0, 0, -eye_pos[0],
-            0, 1, 0, -eye_pos[1],
-            0, 0, 1, -eye_pos[2],
-            0, 0, 0, 1;
+    translate << 1, 0, 0, -eye_pos[0], 0, 1, 0, -eye_pos[1], 0, 0, 1,
+            -eye_pos[2], 0, 0, 0, 1;
 
     view = translate * view;
 
@@ -26,10 +24,7 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle) {
     // Then return it.
     auto cosa = cos(radian);
     auto sina = sin(radian);
-    model << cosa, -sina, 0, 0,
-            sina, cosa, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1;
+    model << cosa, -sina, 0, 0, sina, cosa, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
 
     return model;
 }
@@ -37,24 +32,19 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle) {
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar) {
     // Students will implement this function
-
     Eigen::Matrix4f projection2ortho = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f ortho            = Eigen::Matrix4f::Identity();
     auto            radian           = (eye_fov * M_PI / 180.0) / 2;
-
+    zNear *= -1;
     // Create the projection matrix for the given parameters.
     // Then return it.
     auto top   = abs(zNear) * tan(radian);
     auto right = top * aspect_ratio;
 
-    ortho << 1 / right, 0, 0, 0,
-            0, 1 / top, 0, 0,
-            0, 0, 2 / (zNear - zFar), -(zNear + zFar) / (zNear - zFar),
-            0, 0, 0, 1;
-    projection2ortho << zNear, 0, 0, 0,
-            0, zNear, 0, 0,
-            0, 0, zNear + zFar, -zNear * zFar,
-            0, 0, 1, 0;
+    ortho << 1 / right, 0, 0, 0, 0, 1 / top, 0, 0, 0, 0, 2 / (zNear - zFar),
+            -(zNear + zFar) / (zNear - zFar), 0, 0, 0, 1;
+    projection2ortho << zNear, 0, 0, 0, 0, zNear, 0, 0, 0, 0, zNear + zFar,
+            -zNear * zFar, 0, 0, 1, 0;
 
     return ortho * projection2ortho;
 }
@@ -69,34 +59,23 @@ int main(int argc, const char **argv) {
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     auto        time_str = oss.str();
     std::string filename = "../output/" + time_str + ".png";
-    if (argc == 2) {
-        command_line = true;
-    }
+    if (argc == 2) { command_line = true; }
 
     rst::rasterizer r(700, 700);
 
     Eigen::Vector3f eye_pos = {0, 0, 5};
 
 
-    std::vector<Eigen::Vector3f> pos{
-            {2, 0, -2},
-            {0, 2, -2},
-            {-2, 0, -2},
-            {3.5, -1, -5},
-            {2.5, 1.5, -5},
-            {-1, 0.5, -5}};
+    std::vector<Eigen::Vector3f> pos{{2, 0, -2},     {0, 2, -2},
+                                     {-2, 0, -2},    {3.5, -1, -5},
+                                     {2.5, 1.5, -5}, {-1, 0.5, -5}};
 
-    std::vector<Eigen::Vector3i> ind{
-            {0, 1, 2},
-            {3, 4, 5}};
+    std::vector<Eigen::Vector3i> ind{{0, 1, 2}, {3, 4, 5}};
 
     std::vector<Eigen::Vector3f> cols{
-            {217.0, 238.0, 185.0},
-            {217.0, 238.0, 185.0},
-            {217.0, 238.0, 185.0},
-            {185.0, 217.0, 238.0},
-            {185.0, 217.0, 238.0},
-            {185.0, 217.0, 238.0}};
+            {217.0, 238.0, 185.0}, {217.0, 238.0, 185.0},
+            {217.0, 238.0, 185.0}, {185.0, 217.0, 238.0},
+            {185.0, 217.0, 238.0}, {185.0, 217.0, 238.0}};
 
     auto pos_id = r.load_positions(pos);
     auto ind_id = r.load_indices(ind);

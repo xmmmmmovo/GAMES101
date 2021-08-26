@@ -38,7 +38,7 @@ auto to_vec4(const Eigen::Vector3f &v3, float w = 1.0f) {
 
 // 取叉乘z 限定二维向量
 float cross_product_zero_z_retz(Vector2f &v1, Vector2f &v2) {
-    return v1[0] * v2[1] - v2[1] * v1[0];
+    return v1[0] * v2[1] - v1[1] * v2[0];
 }
 
 // 判断是否在内部
@@ -48,9 +48,6 @@ static bool insideTriangle(int x, int y, const Vector3f *_v) {
     Vector2f p0p1 = p1 - p0, p1p2 = p2 - p1, p2p0 = p0 - p2;
     auto     p   = Vector2f(x, y);
     Vector2f p0p = p - p0, p1p = p - p1, p2p = p - p2;
-    
-    
-
     return cross_product_zero_z_retz(p0p1, p0p) > 0 &&
            cross_product_zero_z_retz(p1p2, p1p) > 0 &&
            cross_product_zero_z_retz(p2p0, p2p) > 0;
@@ -144,8 +141,14 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t) {
                                        beta * v[1].z() / v[1].w() +
                                        gamma * v[2].z() / v[2].w();
                 z_interpolated *= w_reciprocal;
-                if (depth_buf[get_index(x, y)] > z_interpolated) {
+                // 这里输出上下颠倒是没有问题的 因为opencv和自己定义的坐标系相反
+                // 但这里已经反过一次了
+                std::cout << "debug: zz" << z_interpolated << " "
+                          << depth_buf[get_index(x, y)] << std::endl;
+                if (depth_buf[get_index(x, y)] == INFINITY ||
+                    depth_buf[get_index(x, y)] < z_interpolated) {
                     set_pixel(Vector3f(x, y, 1), t.getColor());
+                    depth_buf[get_index(x, y)] = z_interpolated;
                 }
             }
         }
