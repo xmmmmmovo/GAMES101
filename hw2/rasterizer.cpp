@@ -8,6 +8,12 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
+void debug(const char *str) {
+#ifdef DEBUG
+    std::cout << str << std::endl;
+#endif
+}
+
 rst::pos_buf_id
 rst::rasterizer::load_positions(const std::vector<Eigen::Vector3f> &positions) {
     auto id = get_next_id();
@@ -115,6 +121,7 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer,
     }
 }
 
+
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle &t) {
     auto v = t.toVector4();// array contains 3 vector4f
@@ -143,8 +150,6 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t) {
                 z_interpolated *= w_reciprocal;
                 // 这里输出上下颠倒是没有问题的 因为opencv和自己定义的坐标系相反
                 // 但这里已经反过一次了
-                std::cout << "debug: zz" << z_interpolated << " "
-                          << depth_buf[get_index(x, y)] << std::endl;
                 if (depth_buf[get_index(x, y)] == INFINITY ||
                     depth_buf[get_index(x, y)] < z_interpolated) {
                     set_pixel(Vector3f(x, y, 1), t.getColor());
