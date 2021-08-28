@@ -48,7 +48,7 @@ float cross_product_zero_z_retz(Vector2f &v1, Vector2f &v2) {
 }
 
 // 判断是否在内部
-static bool insideTriangle(int x, int y, const Vector3f *_v) {
+static bool insideTriangle(float x, float y, const Vector3f *_v) {
     // Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
     auto     p0 = _v[0].head(2), p1 = _v[1].head(2), p2 = _v[2].head(2);
     Vector2f p0p1 = p1 - p0, p1p2 = p2 - p1, p2p0 = p0 - p2;
@@ -136,25 +136,32 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t) {
         if (left > vv.x()) { left = vv.x(); }
         if (right < vv.x()) { right = vv.x(); }
     }
+    // 4xMSAA(2 * 2)
+    float msaa[4][2] = {{0.25, 0.25}, {0.25, 0.75}, {0.75, 0.25}, {0.75, 0.75}};
     // bounding box
     for (x = left; x <= right; x++) {
         for (y = bottom; y <= top; y++) {
-            if (insideTriangle(x, y, t.v)) {
-                // If so, use the following code to get the interpolated z value.
-                auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
-                float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() +
-                                            gamma / v[2].w());
-                float z_interpolated = alpha * v[0].z() / v[0].w() +
-                                       beta * v[1].z() / v[1].w() +
-                                       gamma * v[2].z() / v[2].w();
-                z_interpolated *= w_reciprocal;
-                // 这里输出上下颠倒是没有问题的 因为opencv和自己定义的坐标系相反
-                // 但这里已经反过一次了
-                if (depth_buf[get_index(x, y)] == INFINITY ||
-                    depth_buf[get_index(x, y)] < z_interpolated) {
-                    set_pixel(Vector3f(x, y, 1), t.getColor());
-                    depth_buf[get_index(x, y)] = z_interpolated;
+            int   cnt  = 0;
+            float minz = INFINITY;
+            for (int i = 0; i < 4; i++) {
+                if (insideTriangle(x + msaa[i][0], y + msaa[i][1], t.v)) {
+                    cnt++;
+                    // If so, use the following code to get the interpolated z value.
+                    auto [alpha, beta, gamma] = computeBarycentric2D(
+                            x + msaa[i][0], y + msaa[i][1], t.v);
+                    float w_reciprocal =
+                            1.0 / (alpha / v[0].w() + beta / v[1].w() +
+                                   gamma / v[2].w());
+                    float z_interpolated = alpha * v[0].z() / v[0].w() +
+                                           beta * v[1].z() / v[1].w() +
+                                           gamma * v[2].z() / v[2].w();
+                    z_interpolated *= -w_reciprocal;
+                    minz = std::min(minz, z_interpolated);
                 }
+            }
+            if (depth_buf[get_index(x, y)] > minz) {
+                set_pixel(Vector3f(x, y, 1), t.getColor() * cnt / 4.0);
+                depth_buf[get_index(x, y)] = minz;
             }
         }
     }
