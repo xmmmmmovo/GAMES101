@@ -8,6 +8,22 @@
 #include "global.hpp"
 #include "rasterizer.hpp"
 
+float Q_rsqrt(float number) {
+    long        i;
+    float       x2, y;
+    const float threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    y  = number;
+    i  = *(long *) &y;// evil floating point bit level hacking（对浮点数的邪恶位元hack）
+    i = 0x5f3759df - (i >> 1);// what the fuck?（这他妈的是怎么回事？）
+    y = *(float *) &i;
+    y = y * (threehalfs - (x2 * y * y));// 1st iteration （第一次迭代）
+    //      y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed（第二次迭代，可以删除）
+
+    return y;
+}
+
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
@@ -37,7 +53,21 @@ Eigen::Matrix4f get_model_matrix(float angle) {
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar) {
-    // TODO: Use the same projection matrix from the previous assignments
+    Eigen::Matrix4f projection2ortho = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f ortho            = Eigen::Matrix4f::Identity();
+    auto            radian           = (eye_fov * M_PI / 180.0) / 2;
+    zNear *= -1;
+    // Create the projection matrix for the given parameters.
+    // Then return it.
+    auto top   = abs(zNear) * tan(radian);
+    auto right = top * aspect_ratio;
+
+    ortho << 1 / right, 0, 0, 0, 0, 1 / top, 0, 0, 0, 0, 2 / (zNear - zFar),
+            -(zNear + zFar) / (zNear - zFar), 0, 0, 0, 1;
+    projection2ortho << zNear, 0, 0, 0, 0, zNear, 0, 0, 0, 0, zNear + zFar,
+            -zNear * zFar, 0, 0, 1, 0;
+
+    return ortho * projection2ortho;
 }
 
 Eigen::Vector3f vertex_shader(const vertex_shader_payload &payload) {
@@ -46,6 +76,7 @@ Eigen::Vector3f vertex_shader(const vertex_shader_payload &payload) {
 
 Eigen::Vector3f normal_fragment_shader(const fragment_shader_payload &payload) {
     Eigen::Vector3f return_color = (payload.normal.head<3>().normalized() +
+                                    // 环境光
                                     Eigen::Vector3f(1.0f, 1.0f, 1.0f)) /
                                    2.f;
     Eigen::Vector3f result;
@@ -193,7 +224,6 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload) {
     Eigen::Vector3f point  = payload.view_pos;
     Eigen::Vector3f normal = payload.normal;
 
-
     float kh = 0.2, kn = 0.1;
 
     // TODO: Implement bump mapping here
@@ -251,6 +281,7 @@ int main(int argc, const char **argv) {
 
     rst::rasterizer r(700, 700);
 
+    // 纹理path
     auto texture_path = "hmap.jpg";
     r.set_texture(Texture(obj_path + texture_path));
 

@@ -116,6 +116,84 @@ $$
 
 ![image-20210828224940248](games101.assets/image-20210828224940248.png)
 
+### Z-buffer
+
+用于判断前后着色器的
+
+### 着色(Shading)
+
+![image-20210829205858651](games101.assets/image-20210829205858651.png)
+
+入射光 法线 反射光 -> viewpoint
+
+着色有局部性，only focus on shading instead of shadowing
+
+### 漫反射(Diffuse Reflection)
+
+会反射到各个地方去
+
+![image-20210829210425131](games101.assets/image-20210829210425131.png)
+
+
+
+#### 能量衰减
+
+![image-20211102224943167](games101.assets/image-20211102224943167.png)
+
+![image-20211102224927331](games101.assets/image-20211102224927331.png)
+
+漫反射系数决定了颜色/亮度
+
+### 高光
+
+![image-20211102234354178](games101.assets/image-20211102234354178.png)
+
+判断半程向量是否接近，就是$n$和$h$是否接近，经验模型，判断是否能看到高光，主要是半程向量好算。指数$p$代表reflection lobe，用于快速下降高光值。
+
+![image-20211102235724402](games101.assets/image-20211102235724402.png)
+
+#### 环境光照
+
+![image-20211103000556564](games101.assets/image-20211103000556564.png)
+
+环境光其实是一个常数，是一个大概，为了保证没有一个地方是完全黑的，真正计算需要全局光照的知识。
+
+![image-20211103002723451](games101.assets/image-20211103002723451.png)
+
+合并光简化模型。
+
+![image-20211103010651292](games101.assets/image-20211103010651292.png)
+
+求每个三角形法线的情况
+
+![image-20211103010742726](games101.assets/image-20211103010742726.png)
+
+定点+插值判断每个三角形
+
+![image-20211103010807569](games101.assets/image-20211103010807569.png)
+
+Phong是着色频率
+
+![image-20211103031706816](games101.assets/image-20211103031706816.png)
+
+法线平均->点的法线
+
+![image-20211103044129429](games101.assets/image-20211103044129429.png)
+
+定义UV坐标系
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
