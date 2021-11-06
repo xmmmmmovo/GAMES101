@@ -2,6 +2,7 @@
     "files.associations": {
         "*.tsx": "typescriptreact",
         "__bit_reference": "cpp",
+        "__bits": "cpp",
         "__config": "cpp",
         "__debug": "cpp",
         "__errc": "cpp",
@@ -86,8 +87,6 @@
         "*.tcc": "cpp",
         "memory_resource": "cpp",
         "stop_token": "cpp",
-        "cinttypes": "cpp",
-        "__bits": "cpp"
-    },
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+        "cinttypes": "cpp"
+    }
 }

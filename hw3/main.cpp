@@ -8,22 +8,6 @@
 #include "global.hpp"
 #include "rasterizer.hpp"
 
-float Q_rsqrt(float number) {
-    long        i;
-    float       x2, y;
-    const float threehalfs = 1.5F;
-
-    x2 = number * 0.5F;
-    y  = number;
-    i  = *(long *) &y;// evil floating point bit level hacking（对浮点数的邪恶位元hack）
-    i = 0x5f3759df - (i >> 1);// what the fuck?（这他妈的是怎么回事？）
-    y = *(float *) &i;
-    y = y * (threehalfs - (x2 * y * y));// 1st iteration （第一次迭代）
-    //      y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed（第二次迭代，可以删除）
-
-    return y;
-}
-
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
@@ -76,7 +60,6 @@ Eigen::Vector3f vertex_shader(const vertex_shader_payload &payload) {
 
 Eigen::Vector3f normal_fragment_shader(const fragment_shader_payload &payload) {
     Eigen::Vector3f return_color = (payload.normal.head<3>().normalized() +
-                                    // 环境光
                                     Eigen::Vector3f(1.0f, 1.0f, 1.0f)) /
                                    2.f;
     Eigen::Vector3f result;
@@ -125,24 +108,43 @@ texture_fragment_shader(const fragment_shader_payload &payload) {
     Eigen::Vector3f result_color = {0, 0, 0};
 
     for (auto &light : lights) {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular*
         // components are. Then, accumulate that result on the *result_color* object.
+        auto light_v      = light.position - point;
+        auto eye_v        = eye_pos - point;
+        auto half_v       = light_v + eye_v;
+        auto square_light = light_v.dot(light_v);
+
+        // 这里是点对点乘法 不是点乘！(坑死我了)
+        auto la = ka.cwiseProduct(amb_light_intensity);
+        auto ld = kd.cwiseProduct(light.intensity / square_light) *
+                  std::max(0.0f, normal.normalized().dot(light_v.normalized()));
+        auto ls =
+                ks.cwiseProduct(light.intensity / square_light) *
+                std::pow(std::max(0.0f,
+                                  normal.normalized().dot(half_v.normalized())),
+                         p);
+        result_color += (la + ld + ls);
     }
 
     return result_color * 255.f;
 }
 
 Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload &payload) {
+    // 环境光：常数
     Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    // 漫反射
     Eigen::Vector3f kd = payload.color;
+    // 高光
     Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
 
+    // 模拟两个光方向
     auto l1 = light{{20, 20, 20}, {500, 500, 500}};
     auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
 
     std::vector<light> lights = {l1, l2};
-    Eigen::Vector3f    amb_light_intensity{10, 10, 10};
-    Eigen::Vector3f    eye_pos{0, 0, 10};
+    // ambient light
+    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f eye_pos{0, 0, 10};
 
     float p = 150;
 
@@ -152,8 +154,22 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload &payload) {
 
     Eigen::Vector3f result_color = {0, 0, 0};
     for (auto &light : lights) {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular*
         // components are. Then, accumulate that result on the *result_color* object.
+        auto light_v      = light.position - point;
+        auto eye_v        = eye_pos - point;
+        auto half_v       = light_v + eye_v;
+        auto square_light = light_v.dot(light_v);
+
+        // 这里是点对点乘法 不是点乘！(坑死我了)
+        auto la = ka.cwiseProduct(amb_light_intensity);
+        auto ld = kd.cwiseProduct(light.intensity / square_light) *
+                  std::max(0.0f, normal.normalized().dot(light_v.normalized()));
+        auto ls =
+                ks.cwiseProduct(light.intensity / square_light) *
+                std::pow(std::max(0.0f,
+                                  normal.normalized().dot(half_v.normalized())),
+                         p);
+        result_color += (la + ld + ls);
     }
 
     return result_color * 255.f;
