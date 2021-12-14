@@ -24,11 +24,18 @@ public:
     Eigen::Vector3f getColor(float u, float v) {
         auto u_img = u * width;
         auto v_img = (1 - v) * height;
+        // std::cout << "u" << u_img << " v" << v_img << std::endl;
         auto color = image_data.at<cv::Vec3b>(v_img, u_img);
         return Eigen::Vector3f(color[0], color[1], color[2]);
     }
+
+    // 插值算法
     Eigen::Vector3f getColorBilinear(float u, float v) {
-        return Eigen::Vector3f();
+        auto u_img = u * width;
+        auto v_img = (1 - v) * height;
+        auto color = image_data.at<cv::Vec3b>(v_img, u_img);
+        return Eigen::Vector3f(color[0], color[1], color[2]);
     }
 };
+
 #endif//RASTERIZER_TEXTURE_H

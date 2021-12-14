@@ -84,8 +84,8 @@ texture_fragment_shader(const fragment_shader_payload &payload) {
     Eigen::Vector3f return_color = {0, 0, 0};
     if (payload.texture) {
         //这里x y其实就是u v
-        return_color += payload.texture->getColor(payload.tex_coords.x(),
-                                                  payload.tex_coords.y());
+        return_color += payload.texture->getColorBilinear(
+                payload.tex_coords.x(), payload.tex_coords.y());
     }
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
@@ -113,11 +113,10 @@ texture_fragment_shader(const fragment_shader_payload &payload) {
         // components are. Then, accumulate that result on the *result_color* object.
         auto light_v      = light.position - point;
         auto eye_v        = eye_pos - point;
-        auto half_v       = light_v + eye_v;
+        auto half_v       = light_v.normalized() + eye_v.normalized();
         auto square_light = light_v.dot(light_v);
 
         // 这里是点对点乘法 不是点乘！(坑死我了)
-        auto la = ka.cwiseProduct(amb_light_intensity);
         auto ld = kd.cwiseProduct(light.intensity / square_light) *
                   std::max(0.0f, normal.normalized().dot(light_v.normalized()));
         auto ls =
@@ -125,8 +124,10 @@ texture_fragment_shader(const fragment_shader_payload &payload) {
                 std::pow(std::max(0.0f,
                                   normal.normalized().dot(half_v.normalized())),
                          p);
-        result_color += (la + ld + ls);
+        result_color += (ld + ls);
     }
+    auto la = ka.cwiseProduct(amb_light_intensity);
+    result_color += la;
 
     return result_color * 255.f;
 }
@@ -159,11 +160,10 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload &payload) {
         // components are. Then, accumulate that result on the *result_color* object.
         auto light_v      = light.position - point;
         auto eye_v        = eye_pos - point;
-        auto half_v       = light_v + eye_v;
+        auto half_v       = light_v.normalized() + eye_v.normalized();
         auto square_light = light_v.dot(light_v);
 
         // 这里是点对点乘法 不是点乘！(坑死我了)
-        auto la = ka.cwiseProduct(amb_light_intensity);
         auto ld = kd.cwiseProduct(light.intensity / square_light) *
                   std::max(0.0f, normal.normalized().dot(light_v.normalized()));
         auto ls =
@@ -171,12 +171,58 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload &payload) {
                 std::pow(std::max(0.0f,
                                   normal.normalized().dot(half_v.normalized())),
                          p);
-        result_color += (la + ld + ls);
+        result_color += (ld + ls);
     }
+    // 环境光是个常数
+    auto la = ka.cwiseProduct(amb_light_intensity);
+    result_color += la;
 
     return result_color * 255.f;
 }
 
+Eigen::Vector3f
+displacement_texture_fragment_shader(const fragment_shader_payload &payload) {
+
+    Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    Eigen::Vector3f kd = payload.color;
+    Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
+
+    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
+
+    std::vector<light> lights = {l1, l2};
+    Eigen::Vector3f    amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f    eye_pos{0, 0, 10};
+
+    float p = 150;
+
+    Eigen::Vector3f color  = payload.color;
+    Eigen::Vector3f point  = payload.view_pos;
+    Eigen::Vector3f normal = payload.normal;
+
+    float kh = 0.2, kn = 0.1;
+
+    // TODO: Implement displacement mapping here
+    // Let n = normal = (x, y, z)
+    // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
+    // Vector b = n cross product t
+    // Matrix TBN = [t b n]
+    // dU = kh * kn * (h(u+1/w,v)-h(u,v))
+    // dV = kh * kn * (h(u,v+1/h)-h(u,v))
+    // Vector ln = (-dU, -dV, 1)
+    // Position p = p + kn * n * h(u,v)
+    // Normal n = normalize(TBN * ln)
+
+
+    Eigen::Vector3f result_color = {0, 0, 0};
+
+    for (auto &light : lights) {
+        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular*
+        // components are. Then, accumulate that result on the *result_color* object.
+    }
+
+    return result_color * 255.f;
+}
 
 Eigen::Vector3f
 displacement_fragment_shader(const fragment_shader_payload &payload) {
@@ -244,7 +290,7 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload) {
 
     float kh = 0.2, kn = 0.1;
 
-    // TODO: Implement bump mapping here
+    // TODO: Implement bump map ping here
     // Let n = normal = (x, y, z)
     // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
     // Vector b = n cross product t
@@ -253,7 +299,14 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload) {
     // dV = kh * kn * (h(u,v+1/h)-h(u,v))
     // Vector ln = (-dU, -dV, 1)
     // Normal n = normalize(TBN * ln)
-
+    auto x = normal.x();
+    auto y = normal.y();
+    auto z = normal.z();
+    auto t = Vector3f(x * y / sqrt(x * x + z * z), sqrt(x * x + z * z),
+                      z * y / sqrt(x * x + z * z));
+    auto b = normal.cross(t);
+    // auto TBN = Eigen::Matrix();
+    // TBN << t << b << n;
 
     Eigen::Vector3f result_color = {0, 0, 0};
     result_color                 = normal;
@@ -278,6 +331,7 @@ int main(int argc, const char **argv) {
     std::string  obj_path = "../models/spot/";
 
     // Load .obj File
+    // TODO: 更改obj
     bool loadout = Loader.LoadFile("../models/spot/spot_triangulated_good.obj");
     for (auto mesh : Loader.LoadedMeshes) {
         for (int i = 0; i < mesh.Vertices.size(); i += 3) {
@@ -300,6 +354,7 @@ int main(int argc, const char **argv) {
     rst::rasterizer r(700, 700);
 
     // 纹理path
+    // TODO: modify texture
     auto texture_path = "hmap.jpg";
     r.set_texture(Texture(obj_path + texture_path));
 
@@ -326,6 +381,9 @@ int main(int argc, const char **argv) {
         } else if (argc == 2 && std::string(argv[1]) == "displacement") {
             std::cout << "Rasterizing using the bump shader\n";
             active_shader = displacement_fragment_shader;
+        } else if (argc == 2 && std::string(argv[1]) == "tdisplacment") {
+            std::cout << "Rasterizing using the bump shader with texture\n";
+            active_shader = displacement_texture_fragment_shader;
         }
     }
 
