@@ -31,6 +31,12 @@ public:
 
     // 插值算法
     Eigen::Vector3f getColorBilinear(float u, float v) {
+        // 尝试考虑边界 解决段异常问题
+        if (u < 0) u = 0;
+        if (v < 0) v = 0;
+        if (u > 1) u = 1;
+        if (v > 1) v = 1;
+
         // 这里开始就帮你做了uv变换了，不需要考虑什么x,y
         auto u_img = u * width;
         auto v_img = (1 - v) * height;
