@@ -405,12 +405,11 @@ int main(int argc, const char **argv) {
 
     objl::Loader Loader;
     std::string  obj_path = "../models/spot/";
-    // std::string obj_path = "../models/rock/";
+    // std::string obj_path = "../models/cube/";
 
     // Load .obj File
-    // TODO: 更改obj
     bool loadout = Loader.LoadFile("../models/spot/spot_triangulated_good.obj");
-    // bool loadout = Loader.LoadFile("../models/rock/rock.obj");
+    // bool loadout = Loader.LoadFile("../models/cube/cube.obj");
     for (auto mesh : Loader.LoadedMeshes) {
         for (int i = 0; i < mesh.Vertices.size(); i += 3) {
             Triangle *t = new Triangle();
@@ -432,9 +431,9 @@ int main(int argc, const char **argv) {
     rst::rasterizer r(700, 700);
 
     // 纹理path
-    // TODO: modify texture
+    // todo: 其他obj 纹理一直存在bug 待解决
     auto texture_path = "hmap.jpg";
-    // auto texture_path = "rock.png";
+    // auto texture_path = "wall1.tif";
     r.set_texture(Texture(obj_path + texture_path));
 
     std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader =
