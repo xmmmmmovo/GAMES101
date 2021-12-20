@@ -86,5 +86,6 @@
         "memory_resource": "cpp",
         "stop_token": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

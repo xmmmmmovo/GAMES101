@@ -196,4 +196,20 @@ Phong是着色频率
 
 
 
+### Geometry
+
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2021-12-21-01-31-43-image.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
