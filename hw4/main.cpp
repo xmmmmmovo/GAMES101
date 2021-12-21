@@ -5,9 +5,6 @@
 
 std::vector<cv::Point2f> control_points;
 
-// 4xMSAA(2 * 2)
-float msaa[4][2] = {{0.25, 0.25}, {0.25, 0.75}, {0.75, 0.25}, {0.75, 0.75}};
-
 void mouse_handler(int event, int x, int y, int flags, void *userdata) {
     if (event == cv::EVENT_LBUTTONDOWN && control_points.size() < 4) {
         std::cout << "Left button of the mouse is clicked - position (" << x
@@ -47,12 +44,48 @@ void msaa_bezier(const std::vector<cv::Point2f> &control_points,
                  cv::Mat                        &window) {
     for (double t = 0.0; t <= 1.0; t += 0.001) {
         auto point = recursive_bezier(control_points, t);
-        int cnt = 0;
-        // 4xmsaa
-        for (int i = 0; i < 4; i++) {
-            
-        }
         window.at<cv::Vec3b>(point.y, point.x)[2] = 255;
+
+        // 插值
+        // 这里不像hw2里面那样全屏绘制所以插值方法不一样
+        auto l = std::floor(point.x);
+        // opencv 上下颠倒
+        auto top = std::floor(point.y);
+
+        // 刚好在中间就啥都不用管
+        if (point.x == l + 0.5 && point.y == top + 0.5) { continue; }
+
+        // 判断横纵覆盖方向
+        int hd = point.x - l < 0.5f ? -1 : 1;
+        int vd = point.y - top < 0.5f ? -1 : 1;
+
+        // 相对原点
+        auto p0 = cv::Point2f(l + 0.5f, top + 0.5f);
+
+        // 周围三个像素: 自己所在像素，以point为中心覆盖的三个像素
+        std::vector<cv::Point2f> aroundp = {
+                cv::Point2f(p0.x + hd * 1.0f, p0.y),
+                cv::Point2f(p0.x, p0.y + vd * 1.0f),
+                cv::Point2f(p0.x + hd * 1.0f, p0.y + vd * 1.0f)};
+
+        // 算离原点距离
+        auto pd           = p0 - point;
+        auto p2p0distance = sqrt(pd.x * pd.x + pd.y * pd.y);
+
+        for (auto &ap : aroundp) {
+            auto tmpp         = ap - point;
+            auto ap2pdistance = sqrt(tmpp.x * tmpp.x + tmpp.y * tmpp.y);
+            // 用了简单的比例关系 可能不需要光强类似的公式
+            auto percent = p2p0distance / ap2pdistance;
+
+            // 这里直接用引用 就不用再取浪费性能了
+            cv::Vec3b &c = window.at<cv::Vec3b>(ap.y, ap.x);
+            if (c[2] != 0) {
+                c[2] = (c[2] + 255 * percent) / 2;
+            } else {
+                c[2] = 255 * percent;
+            }
+        }
     }
 }
 
