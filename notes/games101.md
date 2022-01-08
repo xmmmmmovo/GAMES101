@@ -45,29 +45,31 @@ camera
 正交投影
 
 ![image-20210821100425728](hw1.assets/image-20210821100425728.png)
+
 $$
 M_{ortho}
 =
 \begin{bmatrix}
-    \frac{2}{r-l} & 0 & 0 & -\frac{r+l}{r-l} \\
-    0 & \frac{2}{t-b}& 0 & -\frac{t+b}{t-b} \\
-    0 & 0 & \frac{2}{n-f} & -\frac{n+f}{n-f} \\
-    0 & 0 & 0 & 1 \\
+ \frac{2}{r-l} & 0 & 0 & -\frac{r+l}{r-l} \\
+ 0 & \frac{2}{t-b}& 0 & -\frac{t+b}{t-b} \\
+ 0 & 0 & \frac{2}{n-f} & -\frac{n+f}{n-f} \\
+ 0 & 0 & 0 & 1 \\
 \end{bmatrix}
 $$
-透视投影
 
 ![image-20210821163945373](hw1.assets/image-20210821163945373.png)
+
 $$
 M_{persp\to ortho}
 =
 \begin{bmatrix}
-    n & 0 & 0 & 0 \\
-    0 & n & 0 & 0 \\
-    0 & 0 & n+f & -nf \\
-    0 & 0 & 1 & 0 \\
+ n & 0 & 0 & 0 \\
+ 0 & n & 0 & 0 \\
+ 0 & 0 & n+f & -nf \\
+ 0 & 0 & 1 & 0 \\
 \end{bmatrix}
 $$
+
 ![image-20210821233601100](hw1.assets/image-20210821233601100.png)
 
 标准化
@@ -194,22 +196,50 @@ Phong是着色频率
 
 没懂 需要过后面再看
 
-
-
 ### Geometry
+
+#### 贝塞尔曲线
 
 ![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2021-12-21-01-31-43-image.png)
 
+以四个点为例：
 
+A，B，C，D。取AB，CD，连接取`t`点（0 <= t <= 1），然后连接取`t2`点（同之前），递归地进行此操作，直到只有一个`tfinal`点，此点就是贝塞尔曲线上的一个点。
 
+##### 一些特性
 
+- 一定在一个`凸包`内
 
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2021-12-23-02-02-19-image.png)
 
+- 可以分块计算（一般每四个点为一块 注意下一个的第一个控制点要跟上一个最后的点连起来）
 
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2021-12-23-02-02-32-image.png)
 
+连续：
 
+- C0连续：点和点连续
 
+- C1连续：切线连续，共线且相反
 
+#### 贝塞尔曲面：
 
+一个4x4的控制点块，以一个方向做出贝塞尔曲线，得到每个t都有四个点，然后再对这四个点作贝塞尔曲线，得到曲面点。
 
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2021-12-23-02-56-03-image.png)
 
+### 减少面
+
+final project 时 再看L12
+
+### 光线追踪
+
+#### Path
+
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2022-01-07-15-04-45-image.png)
+
+计算光线是否过面
+
+![](/Users/xmmmmmovo/Documents/code/GAMES101/notes/assets/2022-01-07-15-05-25-image.png)
+
+#### AABB

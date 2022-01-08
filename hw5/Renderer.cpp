@@ -3,6 +3,8 @@
 #include "Vector.hpp"
 #include <fstream>
 #include <optional>
+#include <sstream>
+#include <string>
 
 inline float deg2rad(const float &deg) { return deg * M_PI / 180.0; }
 
@@ -22,7 +24,8 @@ Vector3f reflect(const Vector3f &I, const Vector3f &N) {
 //
 // If the ray is outside, you need to make cosi positive cosi = -N.I
 //
-// If the ray is inside, you need to invert the refractive indices and negate the normal N
+// If the ray is inside, you need to invert the refractive indices and negate
+// the normal N
 // [/comment]
 Vector3f refract(const Vector3f &I, const Vector3f &N, const float &ior) {
     float    cosi = clamp(-1, 1, dotProduct(I, N));
@@ -77,10 +80,12 @@ float fresnel(const Vector3f &I, const Vector3f &N, const float &ior) {
 // \param dir is the ray direction
 // \param objects is the list of objects the scene contains
 // \param[out] tNear contains the distance to the cloesest intersected object.
-// \param[out] index stores the index of the intersect triangle if the interesected object is a mesh.
-// \param[out] uv stores the u and v barycentric coordinates of the intersected point
-// \param[out] *hitObject stores the pointer to the intersected object (used to retrieve material information, etc.)
-// \param isShadowRay is it a shadow ray. We can return from the function sooner as soon as we have found a hit.
+// \param[out] index stores the index of the intersect triangle if the
+// interesected object is a mesh. \param[out] uv stores the u and v barycentric
+// coordinates of the intersected point \param[out] *hitObject stores the
+// pointer to the intersected object (used to retrieve material information,
+// etc.) \param isShadowRay is it a shadow ray. We can return from the function
+// sooner as soon as we have found a hit.
 // [/comment]
 std::optional<hit_payload>
 trace(const Vector3f &orig, const Vector3f &dir,
@@ -106,20 +111,23 @@ trace(const Vector3f &orig, const Vector3f &dir,
 }
 
 // [comment]
-// Implementation of the Whitted-style light transport algorithm (E [S*] (D|G) L)
+// Implementation of the Whitted-style light transport algorithm (E [S*] (D|G)
+// L)
 //
-// This function is the function that compute the color at the intersection point
-// of a ray defined by a position and a direction. Note that thus function is recursive (it calls itself).
+// This function is the function that compute the color at the intersection
+// point of a ray defined by a position and a direction. Note that thus function
+// is recursive (it calls itself).
 //
-// If the material of the intersected object is either reflective or reflective and refractive,
-// then we compute the reflection/refraction direction and cast two new rays into the scene
-// by calling the castRay() function recursively. When the surface is transparent, we mix
-// the reflection and refraction color using the result of the fresnel equations (it computes
-// the amount of reflection and refraction depending on the surface normal, incident view direction
-// and surface refractive index).
+// If the material of the intersected object is either reflective or reflective
+// and refractive, then we compute the reflection/refraction direction and cast
+// two new rays into the scene by calling the castRay() function recursively.
+// When the surface is transparent, we mix the reflection and refraction color
+// using the result of the fresnel equations (it computes the amount of
+// reflection and refraction depending on the surface normal, incident view
+// direction and surface refractive index).
 //
-// If the surface is diffuse/glossy we use the Phong illumation model to compute the color
-// at the intersection point.
+// If the surface is diffuse/glossy we use the Phong illumation model to compute
+// the color at the intersection point.
 // [/comment]
 Vector3f castRay(const Vector3f &orig, const Vector3f &dir, const Scene &scene,
                  int depth) {
@@ -186,7 +194,8 @@ Vector3f castRay(const Vector3f &orig, const Vector3f &dir, const Scene &scene,
                     float lightDistance2 = dotProduct(lightDir, lightDir);
                     lightDir             = normalize(lightDir);
                     float LdotN = std::max(0.f, dotProduct(lightDir, N));
-                    // is the point in shadow, and is the nearest occluding object closer to the object than the light itself?
+                    // is the point in shadow, and is the nearest occluding object closer to
+                    // the object than the light itself?
                     auto shadow_res = trace(shadowPointOrig, lightDir,
                                             scene.get_objects());
                     bool inShadow   = shadow_res &&
@@ -215,9 +224,9 @@ Vector3f castRay(const Vector3f &orig, const Vector3f &dir, const Scene &scene,
 }
 
 // [comment]
-// The main render function. This where we iterate over all pixels in the image, generate
-// primary rays and cast these rays into the scene. The content of the framebuffer is
-// saved to a file.
+// The main render function. This where we iterate over all pixels in the image,
+// generate primary rays and cast these rays into the scene. The content of the
+// framebuffer is saved to a file.
 // [/comment]
 void Renderer::Render(const Scene &scene) {
     std::vector<Vector3f> framebuffer(scene.width * scene.height);
@@ -230,29 +239,36 @@ void Renderer::Render(const Scene &scene) {
     int      m = 0;
     for (int j = 0; j < scene.height; ++j) {
         for (int i = 0; i < scene.width; ++i) {
+            // i, j 像素点
             // generate primary ray direction
-            float x;
-            float y;
-            // TODO: Find the x and y positions of the current pixel to get the direction
-            // vector that passes through it.
-            // Also, don't forget to multiply both of them with the variable *scale*, and
-            // x (horizontal) variable with the *imageAspectRatio*
+            // x, y value get from
+            // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays
+            float x = (2 * ((i + 0.5) / scene.width) - 1) * scale *
+                      imageAspectRatio;
+            float y = (1 - 2 * ((j + 0.5) / scene.height)) * scale;
 
-            Vector3f dir = Vector3f(
-                    x, y, -1);// Don't forget to normalize this direction!
+            // 😅忘了不是用的Eigen了 一直normal
+            Vector3f dir     = normalize(Vector3f(x, y, -1));
             framebuffer[m++] = castRay(eye_pos, dir, scene, 0);
         }
         UpdateProgress(j / (float) scene.height);
     }
 
+    auto               t  = std::time(nullptr);
+    auto               tm = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    auto        time_str = oss.str();
+    std::string filename = "../output/" + time_str + ".ppm";
+
     // save framebuffer to file
-    FILE *fp = fopen("binary.ppm", "wb");
+    FILE *fp = fopen(filename.c_str(), "wb");
     (void) fprintf(fp, "P6\n%d %d\n255\n", scene.width, scene.height);
     for (auto i = 0; i < scene.height * scene.width; ++i) {
         static unsigned char color[3];
-        color[0] = (char) (255 * clamp(0, 1, framebuffer[i].x));
-        color[1] = (char) (255 * clamp(0, 1, framebuffer[i].y));
-        color[2] = (char) (255 * clamp(0, 1, framebuffer[i].z));
+        color[0] = (unsigned char) (255 * clamp(0, 1, framebuffer[i].x));
+        color[1] = (unsigned char) (255 * clamp(0, 1, framebuffer[i].y));
+        color[2] = (unsigned char) (255 * clamp(0, 1, framebuffer[i].z));
         fwrite(color, 1, 3, fp);
     }
     fclose(fp);
