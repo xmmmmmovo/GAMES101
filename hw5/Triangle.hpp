@@ -22,7 +22,7 @@ bool rayTriangleIntersect(const Vector3f &v0, const Vector3f &v1,
                         dotProduct(s2, dir));
 
     auto rcf = dotProduct(s1, e1);
-    // 思考可能是0吗
+    // todos:可能是0吗
     if (rcf <= 0) return false;
 
     auto [t, b1, b2] = tmp / rcf;
@@ -30,7 +30,8 @@ bool rayTriangleIntersect(const Vector3f &v0, const Vector3f &v1,
     v                = b2;
     tnear            = t;
 
-    if (b1 >= 0.0f && b2 >= 0.0f && tnear >= 0 && (1 - u - v) >= -1e-7/*思考 思考这里为什么不是1e-7*/) {
+    // todos: float边界1e-7 为什么是-1e-7而不是+1e-7
+    if (b1 >= 0.0f && b2 >= 0.0f && tnear >= 0 && (1 - u - v) >= -1e-7) {
         return true;
     }
 
